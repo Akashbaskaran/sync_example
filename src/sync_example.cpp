@@ -1,6 +1,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <std_msgs/Float64.h>
@@ -15,9 +16,9 @@ void callback(const ImageConstPtr& image1, const CameraInfoConstPtr& image2)
 {
   std::cout<<"2\n";
   ROS_INFO("Sync_Callback");
-
   image1_pub.publish(image1);
   can_pub.publish(image2);
+
 
 		/*str_info.header.frame_id=std::string("camera");
                 str_info.header.stamp = ros::Time::now();
@@ -37,16 +38,17 @@ int main(int argc, char** argv)
 
   ros::NodeHandle nh;
 
-  message_filters::Subscriber<Image> image1_sub(nh, "/camera/image_raw", 1);
-  message_filters::Subscriber<CameraInfo> image2_sub(nh, "/can_str", 1);
+  message_filters::Subscriber<Image> image1_sub(nh, "/camera/image_raw", 100);
+  message_filters::Subscriber<CameraInfo> image2_sub(nh, "/can_str", 100);
   
-  image1_pub = nh.advertise<Image>("/synchronized_image_raw", 1000);
-  can_pub = nh.advertise<CameraInfo>("/synchronized_can", 1000);
+  image1_pub = nh.advertise<Image>("/sync_image_raw", 100);
+  can_pub = nh.advertise<CameraInfo>("/sync_can", 100);
 
 
   typedef sync_policies::ApproximateTime<Image, CameraInfo> MySyncPolicy;
+  // typedef sync_policies::ExactTime<Image, CameraInfo> MySyncPolicy2;
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-  Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), image1_sub, image2_sub);
+  Synchronizer<MySyncPolicy> sync(MySyncPolicy(10000), image1_sub, image2_sub);
   std::cout<<"\n 5 \n";
  sync.registerCallback(boost::bind(&callback, _1, _2));
  
@@ -56,3 +58,7 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+
+
+
